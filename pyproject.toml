@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "melius-cli"
+version = "0.1.0"
+description = "A powerful AI coding agent CLI with remote control and multi-model support"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "AppointEase Dev", email = "dev@appointease.com"}
+]
+dependencies = [
+    "click",
+    "rich",
+    "python-telegram-bot",
+    "openai",
+    "requests",
+    "playwright",
+    "gitpython",
+    "pydantic",
+    "python-dotenv",
+    "aiohttp"
+]
+
+[project.scripts]
+melius = "melius.cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
