@@ -23,37 +23,40 @@ Available Tools:
 2. read_file(path: str) - Read file content.
 3. write_file(path: str, content: str) - Write or overwrite a file.
 4. edit_file(path: str, old_text: str, new_text: str) - Replace text in a file.
-5. git_op(action: str, repo_url: str = None, message: str = None) - Git operations (clone, pull, push).
+5. git_op(action: str, repo_url: str = None, message: str = None) - Git operations.
+6. browse_web(url: str) - Search or visit a website.
 
 Example Output:
 {
-    "thought": "I need to list the files in the directory.",
-    "tool": "execute_command",
-    "parameters": {"command": "ls -la"}
+    "thought": "I need to check the code.",
+    "tool": "read_file",
+    "parameters": {"path": "main.py"}
 }"""
 
     def run_cycle(self, user_input):
         self.history.append({"role": "user", "content": user_input})
         raw_response = self.provider.query_model(self.system_prompt, self.history)
-        self.history.append({"role": "assistant", "content": raw_response})
         
-        try:
-            # Extract JSON from response
-            json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
-            if json_match:
+        # Parse tool calls
+        json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
+        if json_match:
+            try:
                 action = json.loads(json_match.group())
                 tool = action.get("tool")
                 params = action.get("parameters", {})
-                
                 result = self.dispatch_tool(tool, params)
+                
+                # Feed result back to AI
                 observation = f"Observation: {result}"
+                self.history.append({"role": "assistant", "content": raw_response})
                 self.history.append({"role": "system", "content": observation})
                 
-                # Auto-continue if a tool was used to provide final answer
-                return f"Executed {tool}. Result: {result}\n\n{raw_response}"
-            return raw_response
-        except Exception as e:
-            return f"Error processing agent action: {str(e)}\nRaw Response: {raw_response}"
+                # Recursive call to let AI finish the task
+                return self.run_cycle("Continue based on the observation.")
+            except:
+                pass
+        
+        return raw_response
 
     def dispatch_tool(self, tool, params):
         if tool == "execute_command":
@@ -66,6 +69,8 @@ Example Output:
             return self.edit_file(params.get("path"), params.get("old_text"), params.get("new_text"))
         elif tool == "git_op":
             return self.git_operation(params.get("action"), **params)
+        elif tool == "browse_web":
+            return self.browse_web(params.get("url"))
         return f"Unknown tool: {tool}"
 
     def execute_command(self, command):
@@ -110,3 +115,14 @@ Example Output:
             self.execute_command(f"git commit -m '{kwargs.get('message', 'Melius update')}'")
             return self.execute_command("git push")
         return "Invalid git action."
+
+    def browse_web(self, url):
+        # Integrated lightweight browsing logic
+        try:
+            import requests
+            from bs4 import BeautifulSoup
+            res = requests.get(url, timeout=10)
+            soup = BeautifulSoup(res.text, 'html.parser')
+            return soup.get_text()[:2000] # Return first 2000 chars
+        except Exception as e:
+            return f"Browser error: {str(e)}"
