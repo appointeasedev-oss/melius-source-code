@@ -1,0 +1,23 @@
+name: Auto-Publish on Main Push
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  auto-publish:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    - name: Build and Check
+      run: python -m build
+    # Add publishing steps here if you want every push to main to publish (e.g., to a test PyPI or with a dev version)
