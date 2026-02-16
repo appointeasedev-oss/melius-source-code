@@ -1,0 +1,34 @@
+name: Auto-Release Melius
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install build
+          python -m build
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/*
+            install.sh
+          body: "New Melius release! Download and run `install.sh` to update."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
